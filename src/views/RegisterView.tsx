@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import ErrorMessage from "../components/ErrorMessage";
@@ -16,6 +16,8 @@ export default function RegisterView() {
     password_confirmation: "",
   };
 
+  const navigate = useNavigate();
+
   const {
     reset,
     register,
@@ -31,6 +33,7 @@ export default function RegisterView() {
       const { data } = await api.post(`auth/register`, formData);
       toast.success(data.message);
       reset();
+      navigate(`/login`);
     } catch (error) {
       if (isAxiosError(error) && error.response) {
         toast.error(error.response.data.error);

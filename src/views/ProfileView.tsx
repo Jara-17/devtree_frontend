@@ -1,21 +1,64 @@
 import { useForm } from "react-hook-form";
 import ErrorMessage from "../components/ErrorMessage";
+import { ApiResponse, ProfileForm, User } from "../types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateProfile, uploadImage } from "../api/DevTreeAPI";
+import { toast } from "sonner";
+import { ChangeEvent } from "react";
 
 export default function ProfileView() {
+  const queryClient = useQueryClient();
+
+  const { data } = queryClient.getQueryData(["user"]) as ApiResponse<User>;
+
   const {
-    reset,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      handle: "",
-      description: "",
+      handle: data.handle,
+      description: data.description,
     },
   });
 
-  const handleUserProfileForm = (formData) => {
-    console.log(formData);
+  const updateProfileMutation = useMutation({
+    mutationFn: updateProfile,
+    onError: (error) => {
+      toast.error(error.message);
+    },
+    onSuccess: (data) => {
+      if (data) toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: uploadImage,
+    onError: (error) => {
+      toast.error(error.message);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["user"], (prevData: User) => {
+        return {
+          ...prevData,
+          image: data,
+        };
+      });
+    },
+  });
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      uploadImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleUserProfileForm = (formData: ProfileForm) => {
+    const user: User = queryClient.getQueryData(["user"])!;
+    user.handle = formData.handle;
+    user.description = formData.description;
+    updateProfileMutation.mutate(user);
   };
 
   return (
@@ -72,7 +115,7 @@ export default function ProfileView() {
           name="handle"
           className="border-none bg-slate-100 rounded-lg p-2"
           accept="image/*"
-          onChange={() => {}}
+          onChange={handleChange}
         />
       </div>
 

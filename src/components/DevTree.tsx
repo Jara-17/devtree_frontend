@@ -45,7 +45,21 @@ export default function DevTree({ user }: DevTreeProps) {
               <div className="flex-1 ">
                 <Outlet />
               </div>
-              <div className="w-full md:w-96 bg-slate-800 px-5 py-10 space-y-6 rounded-md shadow-lg border border-lime-500 shadow-lime-500"></div>
+              <div className="w-full md:w-96 bg-slate-800 px-5 py-10 space-y-6 rounded-md shadow-lg border border-lime-500 shadow-lime-500">
+                <p className="text-4xl text-center text-white">{user.handle}</p>
+
+                {user.image && (
+                  <img
+                    src={user.image}
+                    alt={user.handle + " Logo"}
+                    className="mx-auto max-w-[250px] rounded-xl"
+                  />
+                )}
+
+                <p className="text-cente text-lg font-black text-white">
+                  {user.description}
+                </p>
+              </div>
             </div>
           </main>
         </div>

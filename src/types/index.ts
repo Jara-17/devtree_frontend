@@ -1,6 +1,10 @@
-export type ResponseType = {
+export type ApiResponse<T> = {
   message: string;
-  data: User;
+  data: T;
+};
+
+export type Image = {
+  image: string;
 };
 
 export type User = {
@@ -8,7 +12,9 @@ export type User = {
   lastname: string;
   handle: string;
   email: string;
+  description: string;
   _id: string;
+  image: string;
 };
 
 export type RegisterForm = Pick<
@@ -22,3 +28,13 @@ export type RegisterForm = Pick<
 export type LoginForm = Pick<User, "email"> & {
   password: string;
 };
+
+export type ProfileForm = Pick<User, "handle" | "description">;
+
+export type SocialNetwork = {
+  id: number;
+  name: string;
+  url: string;
+  enabled: boolean;
+};
+export type DevTreeLink = Pick<SocialNetwork, "name" | "url" | "enabled">;
