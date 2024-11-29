@@ -15,6 +15,7 @@ export type User = {
   description: string;
   _id: string;
   image: string;
+  links: string;
 };
 
 export type RegisterForm = Pick<

@@ -1,16 +1,16 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { social } from "../data/social";
 import DevTreeInput from "../components/DevTreeInput";
 import { isValidUrl } from "../utils/utils";
 import { updateProfile } from "../api/DevTreeAPI";
-import { User } from "../types";
+import { ApiResponse, SocialNetwork, User } from "../types";
 
 export default function LinkTreeView() {
   const [devTreeLinks, setDevTreeLinks] = useState(social);
   const queryClient = useQueryClient();
-  const user: User = queryClient.getQueryData(["user"])!;
+  const user: ApiResponse<User> = queryClient.getQueryData(["user"])!;
 
   const { mutate } = useMutation({
     mutationFn: updateProfile,
@@ -24,6 +24,25 @@ export default function LinkTreeView() {
     },
   });
 
+  useEffect(() => {
+    const updatedData = devTreeLinks.map((item) => {
+      const userLink = JSON.parse(user.data.links).find(
+        (link: SocialNetwork) => link.name === item.name
+      );
+
+      if (userLink) {
+        return {
+          ...item,
+          url: userLink.url,
+          enabled: userLink.enabled,
+        };
+      }
+
+      return item;
+    });
+    setDevTreeLinks(updatedData);
+  }, []);
+
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
     const updatedLinks = devTreeLinks.map((link) =>
       link.name === e.target.name ? { ...link, url: e.target.value } : link
@@ -31,6 +50,8 @@ export default function LinkTreeView() {
 
     setDevTreeLinks(updatedLinks);
   };
+
+  const links: SocialNetwork[] = JSON.parse(user.data.links);
 
   const handleEnableLink = (socialNetwork: string) => {
     const updatedLinks = devTreeLinks.map((link) => {
@@ -47,10 +68,34 @@ export default function LinkTreeView() {
     });
 
     setDevTreeLinks(updatedLinks);
-    queryClient.setQueryData(["user"], (prevData: User) => {
+
+    let updatedItems: SocialNetwork[] = [];
+
+    const selectedSocialNetwork = updatedLinks.find(
+      (link) => link.name === socialNetwork
+    );
+
+    if (selectedSocialNetwork?.enabled) {
+      const newItem = {
+        ...selectedSocialNetwork,
+        id: links.length + 1,
+      };
+
+      updatedItems = [...links, newItem];
+    } else {
+      console.log("Deshabilitando...");
+    }
+
+    console.log(updatedItems);
+
+    //? Amacenar en la base de datos
+    queryClient.setQueryData(["user"], (prevData: ApiResponse<User>) => {
       return {
         ...prevData,
-        links: JSON.stringify(updatedLinks),
+        data: {
+          ...prevData.data,
+          links: JSON.stringify(updatedItems),
+        },
       };
     });
   };
@@ -68,7 +113,7 @@ export default function LinkTreeView() {
         ))}
 
         <button
-          onClick={() => mutate(user)}
+          onClick={() => mutate(user.data)}
           className="
             border 
             border-cyan-500 
