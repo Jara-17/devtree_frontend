@@ -18,6 +18,11 @@ export type User = {
   links: string;
 };
 
+export type UserHandle = Pick<
+  User,
+  "description" | "handle" | "image" | "links" | "name" | "lastname"
+>;
+
 export type RegisterForm = Pick<
   User,
   "name" | "lastname" | "handle" | "email"

@@ -1,9 +1,17 @@
 import { Link, Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
+import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import NavigationTabs from "./NavigationTabs";
 import { SocialNetwork, User } from "../types";
 import { useEffect, useState } from "react";
 import DevTreeLink from "./DevTreeLink";
+import { useQueryClient } from "@tanstack/react-query";
+import Header from "./Header";
 
 type DevTreeProps = {
   user: User;
@@ -20,23 +28,35 @@ export default function DevTree({ user }: DevTreeProps) {
     );
   }, [user]);
 
+  const queryClient = useQueryClient();
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+
+    if (over && over.id) {
+      const prevIndex = enabledLinks.findIndex((link) => link.id === active.id);
+      const nextIndex = enabledLinks.findIndex((link) => link.id === over.id);
+      const order = arrayMove(enabledLinks, prevIndex, nextIndex);
+
+      setEnabledLinks(order);
+      const disabledLinks: SocialNetwork[] = JSON.parse(user.links).filter(
+        (link: SocialNetwork) => !link.enabled
+      );
+
+      const links = order.concat(disabledLinks);
+
+      queryClient.setQueryData(["user"], (prevData: User) => {
+        return {
+          ...prevData,
+          links: JSON.stringify(links),
+        };
+      });
+    }
+  };
+
   return (
     <>
-      <header className="bg-slate-800 py-5">
-        <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center md:justify-between">
-          <div className="w-full p-5 lg:p-0 md:w-1/3">
-            <img src="/logo.svg" className="w-full block" />
-          </div>
-          <div className="md:w-1/3 md:flex md:justify-end">
-            <button
-              className=" hover:bg-lime-500 border border-lime-500 text-lime-500 p-2 hover:text-white uppercase font-black text-xs rounded-lg cursor-pointer transition-colors duration-300 ease-in-out"
-              onClick={() => {}}
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
       <div className="bg-gray-900  min-h-screen py-10">
         <main className="mx-auto max-w-5xl p-10 md:p-0">
           <NavigationTabs />
@@ -44,7 +64,7 @@ export default function DevTree({ user }: DevTreeProps) {
           <div className="flex justify-end">
             <Link
               className="font-bold text-right text-white hover:text-cyan-500 transition-colors duration-300 ease-in-out text-2xl"
-              to={""}
+              to={`/${user.handle}`}
               target="_blank"
               rel="noreferrer noopener"
             >
@@ -71,11 +91,21 @@ export default function DevTree({ user }: DevTreeProps) {
                 {user.description}
               </p>
 
-              <div className="mt-20 flex flex-col gap-5">
-                {enabledLinks.map((link) => (
-                  <DevTreeLink key={link.name} link={link} />
-                ))}
-              </div>
+              <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="mt-20 flex flex-col gap-5">
+                  <SortableContext
+                    items={enabledLinks}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {enabledLinks.map((link) => (
+                      <DevTreeLink key={link.name} link={link} />
+                    ))}
+                  </SortableContext>
+                </div>
+              </DndContext>
             </div>
           </div>
         </main>

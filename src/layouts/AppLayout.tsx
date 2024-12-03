@@ -11,9 +11,8 @@ export default function AppLayout() {
   } = useQuery({
     queryFn: getUser,
     queryKey: ["user"],
-    retry: 1,
+    retry: 2,
     refetchOnWindowFocus: false,
-    select: (response) => response && response.data,
   });
 
   if (isLoading) return "Cargando...";

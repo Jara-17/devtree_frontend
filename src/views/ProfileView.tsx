@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import ErrorMessage from "../components/ErrorMessage";
-import { ApiResponse, ProfileForm, User } from "../types";
+import { ProfileForm, User } from "../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateProfile, uploadImage } from "../api/DevTreeAPI";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { ChangeEvent } from "react";
 export default function ProfileView() {
   const queryClient = useQueryClient();
 
-  const { data } = queryClient.getQueryData(["user"]) as ApiResponse<User>;
+  const data: User = queryClient.getQueryData(["user"])!;
 
   const {
     register,
@@ -28,7 +28,7 @@ export default function ProfileView() {
       toast.error(error.message);
     },
     onSuccess: (data) => {
-      if (data) toast.success(data.message);
+      toast.success(data && data.message);
       queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
@@ -55,9 +55,9 @@ export default function ProfileView() {
   };
 
   const handleUserProfileForm = (formData: ProfileForm) => {
-    const { data }: ApiResponse<User> = queryClient.getQueryData(["user"])!;
-    data.handle = formData.handle;
-    data.description = formData.description;
+    const user: User = queryClient.getQueryData(["user"])!;
+    user.handle = formData.handle;
+    user.description = formData.description;
     updateProfileMutation.mutate(data);
   };
 
